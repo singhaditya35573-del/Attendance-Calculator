@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AttendIQ - Smart Attendance Calculator & Subject Tracker</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            emerald: {
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+            },
+            amber: {
+              400: '#fbbf24',
+              500: '#f59e0b',
+            },
+            rose: {
+              500: '#f43f5e',
+              600: '#e11d48',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    /* Smooth transitions */
+    * {
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+    }
+    /* Circular Progress Bar Animation */
+    .progress-circle {
+      transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.4s ease;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    .dark ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.4);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.6);
+    }
+    /* Glassmorphism styling */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .dark .glass-card {
+      background: rgba(17, 24, 39, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 flex flex-col selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-40 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+          <i data-lucide="graduation-cap" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <span class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-brand-600 via-indigo-500 to-purple-600 dark:from-brand-200 dark:to-indigo-400">
+            AttendIQ
+          </span>
+          <span class="hidden sm:inline-block ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-200 border border-brand-200 dark:border-brand-500/20">
+            v2.0
+          </span>
+        </div>
+      </div>
+
+      <!-- Action items: Mode Switcher & Dark Mode Toggle -->
+      <div class="flex items-center space-x-2 sm:space-x-4">
+        <!-- Tab Navigation Buttons -->
+        <nav class="flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700/60 text-xs sm:text-sm font-medium">
+          <button id="nav-quick-btn" onclick="switchTab('quick')" class="px-3.5 py-1.5 rounded-lg flex items-center space-x-1.5 font-semibold transition-all shadow-sm bg-white text-brand-600 dark:bg-slate-700 dark:text-white">
+            <i data-lucide="zap" class="w-4 h-4"></i>
+            <span>Quick Calc</span>
+          </button>
+          <button id="nav-tracker-btn" onclick="switchTab('tracker')" class="px-3.5 py-1.5 rounded-lg flex items-center space-x-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all">
+            <i data-lucide="layers" class="w-4 h-4"></i>
+            <span>Subjects</span>
+          </button>
+        </nav>
+
+        <!-- Theme Toggle -->
+        <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 shadow-sm transition">
+          <i id="theme-icon" data-lucide="moon" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+
+    <!-- TAB 1: QUICK CALCULATOR SECTION -->
+    <div id="quick-calc-section" class="space-y-6 block">
+      
+      <!-- Headline & Introduction -->
+      <div class="text-center max-w-xl mx-auto space-y-1.5">
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          Smart Attendance Calculator
+        </h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          Know precisely how many classes you can skip or need to attend to maintain your goal.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- Input Form Card -->
+        <div class="lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-sm">
+          <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-5">
+            <i data-lucide="sliders" class="w-5 h-5 text-brand-500"></i>
+            Attendance Inputs
+          </h2>
+
+          <div class="space-y-5">
+            <!-- Total Classes Held -->
+            <div>
+              <div class="flex justify-between items-center mb-1.5">
+                <label for="quick-total" class="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Total Classes Conducted
+                </label>
+                <span class="text-xs text-slate-400">Held to date</span>
+              </div>
+              <div class="relative">
+                <input type="number" id="quick-total" min="0" value="40" oninput="calcQuick()"
+                  class="w-full pl-4 pr-12 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white font-semibold focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-base"
+                  placeholder="e.g. 40">
+                <div class="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-slate-400">
+                  <i data-lucide="calendar" class="w-5 h-5"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Classes Attended -->
+            <div>
+              <div class="flex justify-between items-center mb-1.5">
+                <label for="quick-attended" class="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Classes Attended
+                </label>
+                <span class="text-xs text-slate-400">Present</span>
+              </div>
+              <div class="relative">
+                <input type="number" id="quick-attended" min="0" value="32" oninput="calcQuick()"
+                  class="w-full pl-4 pr-12 py-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white font-semibold focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-base"
+                  placeholder="e.g. 32">
+                <div class="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-slate-400">
+                  <i data-lucide="check-circle" class="w-5 h-5 text-emerald-500"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Target Percentage Selector -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label for="quick-target" class="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Required Criteria Target: <span id="quick-target-label" class="text-brand-600 dark:text-brand-400 font-bold">75%</span>
+                </label>
+              </div>
+
+              <!-- Quick Presets -->
+              <div class="grid grid-cols-4 gap-2 mb-3">
+                <button type="button" onclick="setQuickPreset(65)" class="preset-btn py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition">65%</button>
+                <button type="button" onclick="setQuickPreset(75)" class="preset-btn active-preset py-1.5 text-xs font-semibold rounded-xl border border-brand-500 bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-300 transition">75%</button>
+                <button type="button" onclick="setQuickPreset(80)" class="preset-btn py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition">80%</button>
+                <button type="button" onclick="setQuickPreset(85)" class="preset-btn py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition">85%</button>
+              </div>
+
+              <!-- Slider for smooth adjustment -->
+              <input type="range" id="quick-target-slider" min="50" max="95" step="1" value="75" oninput="onTargetSliderChange(this.value)"
+                class="w-full accent-brand-500 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer">
+              <div class="flex justify-between text-[11px] text-slate-400 font-medium px-0.5 mt-1">
+                <span>50%</span>
+                <span>65%</span>
+                <span>75%</span>
+                <span>85%</span>
+                <span>95%</span>
+              </div>
+            </div>
+
+            <!-- Quick Adjuster helpers -->
+            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+              <span>Quick Counter helper:</span>
+              <div class="flex space-x-1.5">
+                <button type="button" onclick="quickIncrement('attended')" class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold hover:bg-emerald-500/20 transition">+1 Present</button>
+                <button type="button" onclick="quickIncrement('bunk')" class="px-2.5 py-1 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 font-semibold hover:bg-rose-500/20 transition">+1 Absent</button>
+                <button type="button" onclick="quickReset()" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-300 transition">Reset</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Live Result Display Card -->
+        <div class="lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-sm flex flex-col justify-between">
+          
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <i data-lucide="pie-chart" class="w-5 h-5 text-indigo-500"></i>
+                Status & Statistics
+              </h2>
+              <span id="quick-badge" class="px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/60">
+                Safe
+              </span>
+            </div>
+
+            <!-- Progress Meter & Numbers -->
+            <div class="flex flex-col sm:flex-row items-center gap-6 py-2">
+              <!-- Radial SVG Progress -->
+              <div class="relative w-40 h-40 flex items-center justify-center shrink-0">
+                <svg class="w-full h-full" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="50" stroke-width="10" class="stroke-slate-100 dark:stroke-slate-800 fill-none" />
+                  <circle id="quick-circle-progress" cx="60" cy="60" r="50" stroke-width="10"
+                    stroke-linecap="round"
+                    class="progress-circle stroke-emerald-500 fill-none"
+                    stroke-dasharray="314.16"
+                    stroke-dashoffset="62.83" />
+                </svg>
+                <div class="absolute flex flex-col items-center justify-center text-center">
+                  <span id="quick-percentage-display" class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">80.0%</span>
+                  <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Attendance</span>
+                </div>
+              </div>
+
+              <!-- Quick breakdown chips -->
+              <div class="w-full space-y-2.5">
+                <div class="flex justify-between items-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                  <div class="flex items-center space-x-2 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <span>Attended</span>
+                  </div>
+                  <span id="stat-attended" class="text-sm font-bold text-slate-900 dark:text-white">32 classes</span>
+                </div>
+
+                <div class="flex justify-between items-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                  <div class="flex items-center space-x-2 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                    <span>Missed / Bunked</span>
+                  </div>
+                  <span id="stat-bunked" class="text-sm font-bold text-slate-900 dark:text-white">8 classes</span>
+                </div>
+
+                <div class="flex justify-between items-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                  <div class="flex items-center space-x-2 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                    <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
+                    <span>Target Needed</span>
+                  </div>
+                  <span id="stat-target-req" class="text-sm font-bold text-brand-600 dark:text-brand-400">75%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Actionable Advice Box -->
+          <div id="quick-insight-box" class="mt-4 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 flex items-start gap-3">
+            <div id="quick-insight-icon" class="p-2 rounded-xl bg-emerald-500 text-white shrink-0 mt-0.5">
+              <i data-lucide="smile" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 id="quick-insight-title" class="text-sm font-bold text-emerald-900 dark:text-emerald-200">
+                You are in safe zone!
+              </h3>
+              <p id="quick-insight-text" class="text-xs text-emerald-800/90 dark:text-emerald-300/90 mt-0.5 leading-relaxed">
+                You can safely bunk <strong>2 more classes</strong> while maintaining at least 75% attendance.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: MULTI-SUBJECT TRACKER SECTION -->
+    <div id="tracker-section" class="space-y-6 hidden">
+      
+      <!-- Tracker Summary Banner -->
+      <div class="bg-gradient-to-r from-brand-600 to-indigo-700 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+        <!-- Background decorative blur circles -->
+        <div class="absolute -right-8 -top-8 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="absolute right-32 -bottom-10 w-36 h-36 bg-purple-500/20 rounded-full blur-xl pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div class="space-y-1">
+            <span class="text-xs font-semibold uppercase tracking-wider text-indigo-200 bg-white/10 px-2.5 py-1 rounded-full border border-white/15">
+              Overall Academic Status
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1">
+              Semester Aggregate
+            </h2>
+            <p class="text-xs sm:text-sm text-indigo-100/90 max-w-md">
+              Combined statistics across all tracked subjects and lectures.
+            </p>
+          </div>
+
+          <!-- Overall metrics badges -->
+          <div class="flex items-center gap-4 bg-white/10 backdrop-blur-md px-5 py-4 rounded-2xl border border-white/20">
+            <div class="text-center pr-4 border-r border-white/20">
+              <div id="overall-percentage" class="text-3xl font-black">0%</div>
+              <div class="text-[11px] font-medium text-indigo-200 uppercase tracking-wider">Aggregate</div>
+            </div>
+            <div class="space-y-1 text-xs">
+              <div>Attended: <strong id="overall-attended">0</strong> / <strong id="overall-total">0</strong></div>
+              <div>Missed: <strong id="overall-missed">0</strong> classes</div>
+              <div id="overall-status-text" class="text-emerald-300 font-semibold">On Target</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Bar: Add Subject & Controls -->
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <button onclick="openAddSubjectModal()" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs sm:text-sm flex items-center gap-2 shadow-sm transition active:scale-95">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Add Subject</span>
+          </button>
+          <button onclick="openSubjectPresetModal()" class="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-xs sm:text-sm flex items-center gap-2 transition">
+            <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
+            <span class="hidden sm:inline">Load Sample</span>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="exportData()" title="Export JSON" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition">
+            <i data-lucide="download" class="w-4 h-4"></i>
+          </button>
+          <button onclick="resetAllSubjects()" title="Reset All" class="p-2.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 transition">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Subjects Card Grid -->
+      <div id="subjects-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Rendered dynamically by JS -->
+      </div>
+
+      <!-- Empty State when 0 subjects -->
+      <div id="empty-state" class="hidden text-center py-16 px-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
+        <div class="w-16 h-16 mx-auto rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-brand-500 mb-4">
+          <i data-lucide="book-open" class="w-8 h-8"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-200">No subjects added yet</h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1 mb-5">
+          Track individual courses, record attendances and bunks to stay safely above your cutoff.
+        </p>
+        <button onclick="openAddSubjectModal()" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs sm:text-sm inline-flex items-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Add Your First Subject</span>
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal: Add / Edit Subject -->
+  <div id="subject-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl scale-95 transition-transform duration-200" id="modal-box">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+        <h3 id="modal-title" class="text-lg font-bold text-slate-900 dark:text-white">Add New Subject</h3>
+        <button onclick="closeSubjectModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="subject-form" onsubmit="handleSubjectSubmit(event)" class="mt-4 space-y-4">
+        <input type="hidden" id="edit-subject-id" value="">
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Subject Name</label>
+          <input type="text" id="modal-sub-name" required placeholder="e.g. Data Structures & Algorithms"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-medium text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Attended Classes</label>
+            <input type="number" id="modal-sub-attended" min="0" required value="0"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-medium text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Total Classes</label>
+            <input type="number" id="modal-sub-total" min="0" required value="0"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-medium text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Target Minimum (%)</label>
+          <div class="flex items-center gap-2">
+            <input type="number" id="modal-sub-target" min="1" max="100" required value="75"
+              class="w-24 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm font-medium text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-brand-500">
+            <span class="text-xs text-slate-400">Standard requirement (default: 75%)</span>
+          </div>
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" onclick="closeSubjectModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm transition">
+            Save Subject
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-900 text-white text-xs font-semibold shadow-xl border border-slate-700 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <i id="toast-icon" data-lucide="info" class="w-4 h-4 text-brand-400"></i>
+    <span id="toast-msg">Notification message</span>
+  </div>
+
+  <!-- Footer -->
+  <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-400">
+    <p>AttendIQ • Master your college attendance & bunk safely without detention worries.</p>
+  </footer>
+
+  <script>
+    /* ----------------------------------------------------
+       State & LocalStorage Configuration
+    ---------------------------------------------------- */
+    const STORAGE_KEY_SUBJECTS = 'attendiq_subjects_v2';
+    const STORAGE_KEY_THEME = 'attendiq_theme_v2';
+
+    let subjects = [];
+    let currentQuickTarget = 75;
+
+    // Load initial subjects or default samples
+    function initApp() {
+      // Initialize Lucide icons
+      lucide.createIcons();
+
+      // Theme initialization
+      const savedTheme = localStorage.getItem(STORAGE_KEY_THEME);
+      if (savedTheme === 'light') {
+        document.documentElement.classList.remove('dark');
+        updateThemeIcon(false);
+      } else {
+        document.documentElement.classList.add('dark');
+        updateThemeIcon(true);
+      }
+
+      // Load subjects from localStorage
+      const storedData = localStorage.getItem(STORAGE_KEY_SUBJECTS);
+      if (storedData) {
+        try {
+          subjects = JSON.parse(storedData);
+        } catch (e) {
+          subjects = [];
+        }
+      } else {
+        loadDefaultSubjectsData();
+      }
+
+      // Initial computations
+      calcQuick();
+      renderSubjects();
+    }
+
+    /* ----------------------------------------------------
+       Dark / Light Theme Toggle
+    ---------------------------------------------------- */
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem(STORAGE_KEY_THEME, isDark ? 'dark' : 'light');
+      updateThemeIcon(isDark);
+    }
+
+    function updateThemeIcon(isDark) {
+      const icon = document.getElementById('theme-icon');
+      if (icon) {
+        icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+        lucide.createIcons();
+      }
+    }
+
+    /* ----------------------------------------------------
+       Tab Navigation (Quick Calc vs Subject Tracker)
+    ---------------------------------------------------- */
+    function switchTab(tab) {
+      const quickSection = document.getElementById('quick-calc-section');
+      const trackerSection = document.getElementById('tracker-section');
+      const quickBtn = document.getElementById('nav-quick-btn');
+      const trackerBtn = document.getElementById('nav-tracker-btn');
+
+      if (tab === 'quick') {
+        quickSection.classList.remove('hidden');
+        trackerSection.classList.add('hidden');
+
+        quickBtn.className = "px-3.5 py-1.5 rounded-lg flex items-center space-x-1.5 font-semibold transition-all shadow-sm bg-white text-brand-600 dark:bg-slate-700 dark:text-white";
+        trackerBtn.className = "px-3.5 py-1.5 rounded-lg flex items-center space-x-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all";
+      } else {
+        quickSection.classList.add('hidden');
+        trackerSection.classList.remove('hidden');
+
+        trackerBtn.className = "px-3.5 py-1.5 rounded-lg flex items-center space-x-1.5 font-semibold transition-all shadow-sm bg-white text-brand-600 dark:bg-slate-700 dark:text-white";
+        quickBtn.className = "px-3.5 py-1.5 rounded-lg flex items-center space-x-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all";
+        renderSubjects();
+      }
+      lucide.createIcons();
+    }
+
+    /* ----------------------------------------------------
+       Mathematical Helper Formulas
+    ---------------------------------------------------- */
+    /**
+     * Calculates classes needed to achieve target or classes that can be bunked.
+     * @param {number} attended - Number of classes attended
+     * @param {number} total - Total classes held
+     * @param {number} target - Target percentage (e.g. 75)
+     */
+    function computeAttendanceMetrics(attended, total, target) {
+      if (total <= 0) {
+        return {
+          percentage: 0,
+          canBunk: 0,
+          mustAttend: 0,
+          status: 'No Classes'
+        };
+      }
+
+      const percentage = (attended / total) * 100;
+
+      if (percentage >= target) {
+        // Safe to bunk: floor((100 * attended - target * total) / target)
+        const canBunk = Math.floor((100 * attended - target * total) / target);
+        return {
+          percentage: Number(percentage.toFixed(1)),
+          canBunk: Math.max(0, canBunk),
+          mustAttend: 0,
+          isSafe: true
+        };
+      } else {
+        // Need to attend: ceil((target * total - 100 * attended) / (100 - target))
+        let mustAttend = 0;
+        if (target >= 100) {
+          mustAttend = 999; // mathematically impossible if already missed one
+        } else {
+          mustAttend = Math.ceil((target * total - 100 * attended) / (100 - target));
+        }
+        return {
+          percentage: Number(percentage.toFixed(1)),
+          canBunk: 0,
+          mustAttend: Math.max(0, mustAttend),
+          isSafe: false
+        };
+      }
+    }
+
+    /* ----------------------------------------------------
+       Quick Calculator Logic
+    ---------------------------------------------------- */
+    function setQuickPreset(targetVal) {
+      currentQuickTarget = targetVal;
+      document.getElementById('quick-target-slider').value = targetVal;
+      document.getElementById('quick-target-label').innerText = `${targetVal}%`;
+
+      // Update preset buttons styling
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        if (btn.innerText.includes(`${targetVal}%`)) {
+          btn.className = "preset-btn active-preset py-1.5 text-xs font-semibold rounded-xl border border-brand-500 bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-300 transition";
+        } else {
+          btn.className = "preset-btn py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition";
+        }
+      });
+
+      calcQuick();
+    }
+
+    function onTargetSliderChange(val) {
+      currentQuickTarget = Number(val);
+      document.getElementById('quick-target-label').innerText = `${val}%`;
+      // Clear preset button highlighting if custom value
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        if (btn.innerText.trim() === `${val}%`) {
+          btn.className = "preset-btn active-preset py-1.5 text-xs font-semibold rounded-xl border border-brand-500 bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-300 transition";
+        } else {
+          btn.className = "preset-btn py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition";
+        }
+      });
+      calcQuick();
+    }
+
+    function quickIncrement(type) {
+      const totalEl = document.getElementById('quick-total');
+      const attendedEl = document.getElementById('quick-attended');
+
+      let total = parseInt(totalEl.value) || 0;
+      let attended = parseInt(attendedEl.value) || 0;
+
+      if (type === 'attended') {
+        attended += 1;
+        total += 1;
+      } else if (type === 'bunk') {
+        total += 1;
+      }
+
+      totalEl.value = total;
+      attendedEl.value = attended;
+      calcQuick();
+    }
+
+    function quickReset() {
+      document.getElementById('quick-total').value = 40;
+      document.getElementById('quick-attended').value = 32;
+      setQuickPreset(75);
+      showToast('Quick calculator reset to default values');
+    }
+
+    function calcQuick() {
+      const totalInput = document.getElementById('quick-total');
+      const attendedInput = document.getElementById('quick-attended');
+
+      let total = parseInt(totalInput.value) || 0;
+      let attended = parseInt(attendedInput.value) || 0;
+
+      // Validation guardrail
+      if (attended > total) {
+        attended = total;
+        attendedInput.value = attended;
+      }
+      if (total < 0) total = 0;
+      if (attended < 0) attended = 0;
+
+      const metrics = computeAttendanceMetrics(attended, total, currentQuickTarget);
+      const missed = total - attended;
+
+      // Update stat counters
+      document.getElementById('stat-attended').innerText = `${attended} classes`;
+      document.getElementById('stat-bunked').innerText = `${missed} classes`;
+      document.getElementById('stat-target-req').innerText = `${currentQuickTarget}%`;
+      document.getElementById('quick-percentage-display').innerText = `${metrics.percentage}%`;
+
+      // Update SVG Circular progress
+      const circumference = 2 * Math.PI * 50; // r = 50 -> ~314.16
+      const circleEl = document.getElementById('quick-circle-progress');
+      const offset = circumference - (Math.min(metrics.percentage, 100) / 100) * circumference;
+      circleEl.style.strokeDashoffset = offset;
+
+      // Badging & Color states
+      const badge = document.getElementById('quick-badge');
+      const insightBox = document.getElementById('quick-insight-box');
+      const insightIcon = document.getElementById('quick-insight-icon');
+      const insightTitle = document.getElementById('quick-insight-title');
+      const insightText = document.getElementById('quick-insight-text');
+
+      if (total === 0) {
+        badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400";
+        badge.innerText = "No Classes";
+        circleEl.style.stroke = "#94a3b8";
+        insightBox.className = "mt-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 flex items-start gap-3";
+        insightIcon.className = "p-2 rounded-xl bg-slate-400 text-white shrink-0 mt-0.5";
+        insightIcon.innerHTML = `<i data-lucide="info" class="w-5 h-5"></i>`;
+        insightTitle.innerText = "No Classes Held";
+        insightTitle.className = "text-sm font-bold text-slate-700 dark:text-slate-300";
+        insightText.innerText = "Add classes to begin calculating your attendance forecast.";
+        lucide.createIcons();
+        return;
+      }
+
+      if (metrics.percentage >= currentQuickTarget) {
+        // Safe Zone
+        circleEl.style.stroke = "#10b981"; // Emerald
+        badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/60";
+        badge.innerText = metrics.percentage >= (currentQuickTarget + 10) ? "Optimal / Safe" : "On Track";
+
+        insightBox.className = "mt-4 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 flex items-start gap-3";
+        insightIcon.className = "p-2 rounded-xl bg-emerald-500 text-white shrink-0 mt-0.5";
+        insightIcon.innerHTML = `<i data-lucide="check-check" class="w-5 h-5"></i>`;
+        insightTitle.className = "text-sm font-bold text-emerald-900 dark:text-emerald-200";
+        insightTitle.innerText = "Safe Attendance Zone";
+
+        if (metrics.canBunk > 0) {
+          insightText.innerHTML = `You can safely bunk <strong>${metrics.canBunk} upcoming class${metrics.canBunk > 1 ? 'es' : ''}</strong> without slipping below your <strong>${currentQuickTarget}%</strong> requirement!`;
+        } else {
+          insightText.innerHTML = `You are precisely on track! Avoid skipping the very next class to avoid dipping below <strong>${currentQuickTarget}%</strong>.`;
+        }
+      } else {
+        // Below Target Zone
+        const isCritical = metrics.percentage < (currentQuickTarget - 15);
+        circleEl.style.stroke = isCritical ? "#f43f5e" : "#f59e0b"; // Rose or Amber
+        
+        badge.className = isCritical 
+          ? "px-3 py-1 rounded-full text-xs font-bold uppercase bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-800/60"
+          : "px-3 py-1 rounded-full text-xs font-bold uppercase bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-800/60";
+        badge.innerText = isCritical ? "Critical Shortage" : "Attendance Shortage";
+
+        insightBox.className = isCritical
+          ? "mt-4 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/50 flex items-start gap-3"
+          : "mt-4 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 flex items-start gap-3";
+        
+        insightIcon.className = isCritical ? "p-2 rounded-xl bg-rose-500 text-white shrink-0 mt-0.5" : "p-2 rounded-xl bg-amber-500 text-white shrink-0 mt-0.5";
+        insightIcon.innerHTML = `<i data-lucide="alert-triangle" class="w-5 h-5"></i>`;
+
+        insightTitle.className = isCritical ? "text-sm font-bold text-rose-900 dark:text-rose-200" : "text-sm font-bold text-amber-900 dark:text-amber-200";
+        insightTitle.innerText = isCritical ? "Critical Attendance Alert!" : "Attendance Below Threshold";
+
+        insightText.innerHTML = `You must attend the next <strong>${metrics.mustAttend} consecutive class${metrics.mustAttend > 1 ? 'es' : ''}</strong> to recover and hit your <strong>${currentQuickTarget}%</strong> goal.`;
+      }
+
+      lucide.createIcons();
+    }
+
+    /* ----------------------------------------------------
+       Multi-Subject Tracker Management
+    ---------------------------------------------------- */
+    function saveSubjectsToStorage() {
+      localStorage.setItem(STORAGE_KEY_SUBJECTS, JSON.stringify(subjects));
+    }
+
+    function loadDefaultSubjectsData() {
+      subjects = [
+        { id: '1', name: 'Data Structures & Algorithms', attended: 28, total: 32, target: 75, history: [] },
+        { id: '2', name: 'Database Management Systems', attended: 18, total: 25, target: 75, history: [] },
+        { id: '3', name: 'Computer Networks', attended: 22, total: 24, target: 80, history: [] },
+        { id: '4', name: 'Web Engineering Lab', attended: 12, total: 16, target: 75, history: [] }
+      ];
+      saveSubjectsToStorage();
+    }
+
+    function renderSubjects() {
+      const container = document.getElementById('subjects-container');
+      const emptyState = document.getElementById('empty-state');
+
+      if (subjects.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        updateOverallStats();
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      container.innerHTML = '';
+
+      subjects.forEach((sub) => {
+        const metrics = computeAttendanceMetrics(sub.attended, sub.total, sub.target || 75);
+        const missed = sub.total - sub.attended;
+        const isSafe = metrics.percentage >= (sub.target || 75);
+
+        // Card Border and Badge styling based on status
+        let statusBadgeClass = "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300";
+        let statusText = "On Track";
+        let progressColor = "bg-emerald-500";
+        
+        if (!isSafe) {
+          if (metrics.percentage < ((sub.target || 75) - 15)) {
+            statusBadgeClass = "bg-rose-100 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300";
+            statusText = "Critical";
+            progressColor = "bg-rose-500";
+          } else {
+            statusBadgeClass = "bg-amber-100 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300";
+            statusText = "Low";
+            progressColor = "bg-amber-500";
+          }
+        }
+
+        const card = document.createElement('div');
+        card.className = "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between";
+        card.innerHTML = `
+          <div>
+            <!-- Header: Title and Options -->
+            <div class="flex items-start justify-between gap-2 mb-3">
+              <div>
+                <h4 class="font-bold text-slate-900 dark:text-white text-base leading-snug tracking-tight">${escapeHTML(sub.name)}</h4>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-[11px] px-2 py-0.5 rounded-full font-semibold ${statusBadgeClass}">${statusText}</span>
+                  <span class="text-[11px] text-slate-400 font-medium">Goal: ${sub.target || 75}%</span>
+                </div>
+              </div>
+
+              <!-- Edit / Delete actions -->
+              <div class="flex items-center space-x-1 shrink-0">
+                <button onclick="editSubject('${sub.id}')" title="Edit Subject" class="p-1.5 rounded-lg text-slate-400 hover:text-brand-500 dark:hover:text-brand-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                  <i data-lucide="pencil" class="w-4 h-4"></i>
+                </button>
+                <button onclick="deleteSubject('${sub.id}')" title="Delete Subject" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                  <i data-lucide="trash" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Stats Bar & Progress -->
+            <div class="space-y-2 mt-4">
+              <div class="flex justify-between items-baseline">
+                <span class="text-2xl font-black text-slate-900 dark:text-white">${metrics.percentage}%</span>
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  <strong class="text-emerald-500">${sub.attended}</strong> / ${sub.total} held
+                </span>
+              </div>
+
+              <!-- Linear Progress Bar -->
+              <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                <div class="h-full rounded-full ${progressColor} transition-all duration-500" style="width: ${Math.min(metrics.percentage, 100)}%"></div>
+              </div>
+            </div>
+
+            <!-- Recommendation Alert Pill -->
+            <div class="mt-4 p-2.5 rounded-2xl ${isSafe ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300' : 'bg-rose-500/10 text-rose-800 dark:text-rose-300'} text-xs font-medium flex items-center gap-2">
+              <i data-lucide="${isSafe ? 'thumbs-up' : 'alert-circle'}" class="w-4 h-4 shrink-0"></i>
+              <span>${isSafe ? `Can safely bunk <strong>${metrics.canBunk}</strong> class${metrics.canBunk !== 1 ? 'es' : ''}` : `Attend next <strong>${metrics.mustAttend}</strong> class${metrics.mustAttend !== 1 ? 'es' : ''} consecutively`}</span>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
+            <div class="flex items-center space-x-1.5">
+              <button onclick="logSubjectAttendance('${sub.id}', 'present')" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-xs font-bold transition flex items-center gap-1 active:scale-95">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Present
+              </button>
+              <button onclick="logSubjectAttendance('${sub.id}', 'absent')" class="px-2.5 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-600 dark:text-rose-400 text-xs font-bold transition flex items-center gap-1 active:scale-95">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i> Absent
+              </button>
+            </div>
+
+            <button onclick="undoLastSubjectAction('${sub.id}')" title="Undo Last Change" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      updateOverallStats();
+      lucide.createIcons();
+    }
+
+    function updateOverallStats() {
+      if (subjects.length === 0) {
+        document.getElementById('overall-percentage').innerText = '0%';
+        document.getElementById('overall-attended').innerText = '0';
+        document.getElementById('overall-total').innerText = '0';
+        document.getElementById('overall-missed').innerText = '0';
+        document.getElementById('overall-status-text').innerText = 'No Data';
+        return;
+      }
+
+      let totAttended = 0;
+      let totHeld = 0;
+      let avgTarget = 0;
+
+      subjects.forEach(s => {
+        totAttended += (s.attended || 0);
+        totHeld += (s.total || 0);
+        avgTarget += (s.target || 75);
+      });
+
+      avgTarget = avgTarget / subjects.length;
+      const overallPercent = totHeld > 0 ? (totAttended / totHeld) * 100 : 0;
+      const missed = totHeld - totAttended;
+
+      document.getElementById('overall-percentage').innerText = `${overallPercent.toFixed(1)}%`;
+      document.getElementById('overall-attended').innerText = totAttended;
+      document.getElementById('overall-total').innerText = totHeld;
+      document.getElementById('overall-missed').innerText = missed;
+
+      const statusEl = document.getElementById('overall-status-text');
+      if (overallPercent >= avgTarget) {
+        statusEl.innerText = 'Safe & Meeting Goals 🎉';
+        statusEl.className = 'text-emerald-300 font-semibold';
+      } else {
+        statusEl.innerText = 'Attention Required ⚠️';
+        statusEl.className = 'text-amber-300 font-semibold';
+      }
+    }
+
+    /* ----------------------------------------------------
+       Subject Quick Counter & History Actions
+    ---------------------------------------------------- */
+    function logSubjectAttendance(id, status) {
+      const sub = subjects.find(s => s.id === id);
+      if (!sub) return;
+
+      if (!sub.history) sub.history = [];
+
+      // Save previous state to history stack for easy undo
+      sub.history.push({ attended: sub.attended, total: sub.total });
+
+      if (status === 'present') {
+        sub.attended += 1;
+        sub.total += 1;
+        showToast(`Marked present for ${sub.name}`);
+      } else if (status === 'absent') {
+        sub.total += 1;
+        showToast(`Marked absent for ${sub.name}`);
+      }
+
+      saveSubjectsToStorage();
+      renderSubjects();
+    }
+
+    function undoLastSubjectAction(id) {
+      const sub = subjects.find(s => s.id === id);
+      if (!sub || !sub.history || sub.history.length === 0) {
+        showToast('Nothing to undo for this subject');
+        return;
+      }
+
+      const prev = sub.history.pop();
+      sub.attended = prev.attended;
+      sub.total = prev.total;
+
+      saveSubjectsToStorage();
+      renderSubjects();
+      showToast(`Reverted last change for ${sub.name}`);
+    }
+
+    function deleteSubject(id) {
+      const sub = subjects.find(s => s.id === id);
+      const name = sub ? sub.name : 'Subject';
+      subjects = subjects.filter(s => s.id !== id);
+      saveSubjectsToStorage();
+      renderSubjects();
+      showToast(`Removed "${name}"`);
+    }
+
+    /* ----------------------------------------------------
+       Subject Modal (Add / Edit) Handlers
+    ---------------------------------------------------- */
+    function openAddSubjectModal() {
+      document.getElementById('modal-title').innerText = "Add New Subject";
+      document.getElementById('edit-subject-id').value = "";
+      document.getElementById('modal-sub-name').value = "";
+      document.getElementById('modal-sub-attended').value = "0";
+      document.getElementById('modal-sub-total').value = "0";
+      document.getElementById('modal-sub-target').value = "75";
+
+      showModal();
+    }
+
+    function editSubject(id) {
+      const sub = subjects.find(s => s.id === id);
+      if (!sub) return;
+
+      document.getElementById('modal-title').innerText = "Edit Subject";
+      document.getElementById('edit-subject-id').value = sub.id;
+      document.getElementById('modal-sub-name').value = sub.name;
+      document.getElementById('modal-sub-attended').value = sub.attended;
+      document.getElementById('modal-sub-total').value = sub.total;
+      document.getElementById('modal-sub-target').value = sub.target || 75;
+
+      showModal();
+    }
+
+    function showModal() {
+      const modal = document.getElementById('subject-modal');
+      const box = document.getElementById('modal-box');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        box.classList.remove('scale-95');
+        box.classList.add('scale-100');
+      }, 10);
+    }
+
+    function closeSubjectModal() {
+      const modal = document.getElementById('subject-modal');
+      const box = document.getElementById('modal-box');
+      modal.classList.add('opacity-0');
+      box.classList.remove('scale-100');
+      box.classList.add('scale-95');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 200);
+    }
+
+    function handleSubjectSubmit(event) {
+      event.preventDefault();
+      const id = document.getElementById('edit-subject-id').value;
+      const name = document.getElementById('modal-sub-name').value.trim();
+      let attended = parseInt(document.getElementById('modal-sub-attended').value) || 0;
+      let total = parseInt(document.getElementById('modal-sub-total').value) || 0;
+      const target = parseInt(document.getElementById('modal-sub-target').value) || 75;
+
+      if (attended > total) {
+        attended = total; // sanitize
+      }
+
+      if (id) {
+        // Edit existing
+        const index = subjects.findIndex(s => s.id === id);
+        if (index !== -1) {
+          subjects[index].name = name;
+          subjects[index].attended = attended;
+          subjects[index].total = total;
+          subjects[index].target = target;
+          showToast(`Updated "${name}"`);
+        }
+      } else {
+        // Create new
+        const newSub = {
+          id: Date.now().toString(),
+          name,
+          attended,
+          total,
+          target,
+          history: []
+        };
+        subjects.push(newSub);
+        showToast(`Added "${name}"`);
+        // celebratory small burst confetti
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 30, spread: 60, origin: { y: 0.8 } });
+        }
+      }
+
+      saveSubjectsToStorage();
+      closeSubjectModal();
+      renderSubjects();
+    }
+
+    function openSubjectPresetModal() {
+      loadDefaultSubjectsData();
+      renderSubjects();
+      showToast('Loaded sample college curriculum subjects');
+    }
+
+    function resetAllSubjects() {
+      subjects = [];
+      saveSubjectsToStorage();
+      renderSubjects();
+      showToast('All subjects cleared');
+    }
+
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(subjects, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `attendiq_backup_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('Exported backup file successfully');
+    }
+
+    /* ----------------------------------------------------
+       Toast Notification System
+    ---------------------------------------------------- */
+    let toastTimeout;
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-msg');
+      toastMsg.innerText = message;
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2600);
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag] || tag)
+      );
+    }
+
+    // Initialize on window load
+    window.onload = initApp;
+  </script>
+</body>
+</html>
